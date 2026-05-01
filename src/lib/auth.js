@@ -11,8 +11,8 @@ export const auth = {
     return api.post('/auth/lookup', { phone }, { auth: false })
   },
 
-  async requestOtp(phone) {
-    return api.post('/auth/request-otp', { phone }, { auth: false })
+  async requestOtp(phone, name = '') {
+    return api.post('/auth/request-otp', { phone, name }, { auth: false })
   },
 
   async verifyOtp(phone, otp) {
@@ -25,13 +25,13 @@ export const auth = {
     }
   },
 
-  async setPassword(phone, password, intent = 'customer') {
+  async setPassword(phone, password, intent = 'customer', name = '') {
     const ticket = sessionStorage.getItem(TICKET_KEY)
     if (!ticket) return { ok: false, error: 'OTP session missing. Request a new code.' }
     try {
       const res = await api.post(
         '/auth/set-password',
-        { phone, password, intent, ticket },
+        { phone, password, intent, ticket, name },
         { auth: false },
       )
       api.setToken(res.token)

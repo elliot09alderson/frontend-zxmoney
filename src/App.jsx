@@ -15,6 +15,7 @@ import { auth } from './lib/auth'
 export default function App() {
   const [view, setView] = useState('phone')
   const [phone, setPhone] = useState('')
+  const [name, setName] = useState('')
   const [intent, setIntent] = useState('customer')
   const [session, setSession] = useState(null) // { phone, role, restaurant? }
   const [ready, setReady] = useState(false)
@@ -32,11 +33,14 @@ export default function App() {
     let cancelled = false
     ;(async () => {
       const me = await resolveSession()
-      // Deep-link: /<10-digit-phone> → pre-fill phone and route into OTP or sign-in
+      // Deep-link: /<10-digit-phone>?name=... → pre-fill phone and route into OTP or sign-in
       const match = window.location.pathname.match(/^\/(\d{10})\/?$/)
       if (match && !me && !cancelled) {
         const deepPhone = match[1]
+        const params = new URLSearchParams(window.location.search)
+        const deepName = decodeURIComponent(params.get('name') || '')
         setPhone(deepPhone)
+        if (deepName) setName(deepName)
         setIntent('customer')
         window.history.replaceState({}, '', '/')
         try {
@@ -45,7 +49,7 @@ export default function App() {
           if (status === 'needs-password') {
             setView('signin')
           } else {
-            await auth.requestOtp(deepPhone)
+            await auth.requestOtp(deepPhone, deepName)
             if (!cancelled) setView('otp')
           }
         } catch {
@@ -139,7 +143,7 @@ export default function App() {
         )}
         {view === 'otp' && <OtpVerify key="otp" phone={phone} go={go} />}
         {view === 'setpw' && (
-          <SetPassword key="setpw" phone={phone} intent={intent} go={go} />
+          <SetPassword key="setpw" phone={phone} name={name} intent={intent} go={go} />
         )}
         {view === 'signin' && <SignIn key="signin" phone={phone} go={go} />}
       </AnimatePresence>

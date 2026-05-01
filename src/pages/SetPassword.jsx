@@ -6,7 +6,7 @@ import PasswordStrength, { scorePassword } from '../components/PasswordStrength'
 import PrimaryButton from '../components/PrimaryButton'
 import { auth } from '../lib/auth'
 
-export default function SetPassword({ phone, go, intent = 'customer' }) {
+export default function SetPassword({ phone, name = '', go, intent = 'customer' }) {
   const [pw, setPw] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,7 +21,7 @@ export default function SetPassword({ phone, go, intent = 'customer' }) {
     if (!ready || loading) return
     setLoading(true)
     setError('')
-    const res = await auth.setPassword(phone, pw, intent)
+    const res = await auth.setPassword(phone, pw, intent, name)
     setLoading(false)
     if (!res.ok) {
       setError(res.error || 'Could not set password')
