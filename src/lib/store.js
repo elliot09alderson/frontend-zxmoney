@@ -31,6 +31,27 @@ export const deleteWinner  = (id)   => api.del(`/admin/winners/${id}`)
 export const listAdmins     = ()               => api.get('/super/admins')
 export const setAdminStatus = (phone, status)  =>
   api.patch(`/super/admins/${phone}/status`, { status })
+export const listSuperRestaurants = ()       => api.get('/super/restaurants')
+export const listSuperWinners     = ()       => api.get('/super/winners')
+export const addSuperWinner       = (data)   => api.post('/super/winners', data)
+export const deleteSuperWinner    = (id)     => api.del(`/super/winners/${id}`)
+
+export const listSuperContests           = ()           => api.get('/super/contests')
+export const addSuperContest             = (data)       => api.post('/super/contests', data)
+export const deleteSuperContest          = (id)         => api.del(`/super/contests/${id}`)
+export const listSuperContestWinners     = (id)         => api.get(`/super/contests/${id}/winners`)
+export const declareSuperContestWinners  = (id, winners) => api.post(`/super/contests/${id}/declare-winners`, { winners })
+
+export const getWalletConfig        = ()           => api.get('/super/wallet-config')
+export const setWalletConfig        = (data)       => api.post('/super/wallet-config', data)
+export const disburseWalletCredits  = ()           => api.post('/super/wallet-config/disburse', {})
+export const listWalletTransactions = ()           => api.get('/super/wallet-transactions')
+export const listMyWalletTxns       = ()           => api.get('/wallet/me')
+export const getRedeemHistory       = ()           => api.get('/redeem/history')
+export const submitRedeemRequest    = (data)       => api.post('/redeem/request', data)
+export const listAdminRedeemReqs    = (status)     => api.get(`/redeem/admin/requests${status ? `?status=${status}` : ''}`)
+export const resolveRedeemRequest   = (id, data)   => api.patch(`/redeem/admin/requests/${id}`, data)
+export const sendWalletCredit       = (data)       => api.post('/super/wallet/send', data)
 
 // ----- PARTNER onboarding -----
 export const submitPartnerOnboarding = (payload) => api.post('/partner/onboard', payload)

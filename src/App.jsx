@@ -110,7 +110,7 @@ export default function App() {
             : session.role === 'admin' ? 'max-w-3xl'
             : 'max-w-lg'
           }`}>
-            {session.role === 'customer' && <CustomerApp phone={session.phone} onSignOut={signOut} />}
+            {session.role === 'customer' && <CustomerApp phone={session.phone} walletBalance={session.walletBalance ?? 0} earnedBalance={session.earnedBalance ?? 0} onSignOut={signOut} />}
             {session.role === 'admin' && <AdminDashboard phone={session.phone} session={session} onRefresh={resolveSession} onSignOut={signOut} />}
             {session.role === 'super' && <SuperAdmin onSignOut={signOut} />}
 

@@ -6,7 +6,7 @@ import AllContests from './AllContests'
 import AllWinners from './AllWinners'
 import { auth } from '../../lib/auth'
 
-export default function CustomerApp({ phone, onSignOut }) {
+export default function CustomerApp({ phone, walletBalance = 0, earnedBalance = 0, onSignOut }) {
   const [view, setView] = useState({ name: 'home' })
   const go = (v) => {
     if (typeof v === 'string') setView({ name: v })
@@ -25,6 +25,8 @@ export default function CustomerApp({ phone, onSignOut }) {
         {view.name === 'home' && (
           <CustomerHome
             phone={phone}
+            walletBalance={walletBalance}
+            earnedBalance={earnedBalance}
             onSignOut={onSignOut}
             openRestaurant={(id) => go({ name: 'restaurant', id })}
             openAllContests={() => go('contests')}

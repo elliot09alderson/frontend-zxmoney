@@ -807,12 +807,16 @@ function WinnersTab({ restaurant }) {
   const [list, setList] = useState([])
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ name: '', prize: '', photoUrl: '' })
+  const [section, setSection] = useState('mine') // 'mine' | 'global'
 
   async function refresh() {
     const all = await api.get('/admin/winners')
     setList(all)
   }
   useEffect(() => { refresh() }, [])
+
+  const mine   = list.filter((w) => w.source !== 'global')
+  const global = list.filter((w) => w.source === 'global')
 
   async function submit() {
     if (!form.name || !form.photoUrl) return
@@ -829,49 +833,98 @@ function WinnersTab({ restaurant }) {
 
   return (
     <GlassCard className="!p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className="font-display text-[17px] font-semibold">Winner gallery</div>
-        <button
-          onClick={() => setAdding((x) => !x)}
-          className="btn-ghost inline-flex items-center gap-1.5 rounded-full h-9 px-3 text-[12px]"
-        >
-          {adding ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-          {adding ? 'Close' : 'Add winner'}
-        </button>
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-display text-[17px] font-semibold">Winners</div>
+        {section === 'mine' && (
+          <button
+            onClick={() => setAdding((x) => !x)}
+            className="btn-ghost inline-flex items-center gap-1.5 rounded-full h-9 px-3 text-[12px]"
+          >
+            {adding ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+            {adding ? 'Close' : 'Add winner'}
+          </button>
+        )}
       </div>
 
-      {adding && (
-        <div className="glass-subtle rounded-2xl p-4 space-y-3 mb-4">
-          <InputRow compact label="Winner name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-          <InputRow compact label="Prize" value={form.prize} onChange={(v) => setForm({ ...form, prize: v })} />
-          <InputRow compact label="Photo URL" value={form.photoUrl} onChange={(v) => setForm({ ...form, photoUrl: v })} />
-          <PrimaryButton onClick={submit} icon={Plus}>Publish winner</PrimaryButton>
-        </div>
+      {/* Sub-tabs */}
+      <div className="flex gap-2 mb-4">
+        {[['mine', `My winners (${mine.length})`], ['global', `Global winners (${global.length})`]].map(([v, label]) => (
+          <button key={v} onClick={() => setSection(v)}
+            className={`h-8 px-3 rounded-full text-[12px] font-medium transition-colors ${
+              section === v
+                ? 'bg-crimson-500/15 border border-crimson-400/50 text-white'
+                : 'glass-subtle text-white/60 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {section === 'mine' && (
+        <>
+          {adding && (
+            <div className="glass-subtle rounded-2xl p-4 space-y-3 mb-4">
+              <InputRow compact label="Winner name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+              <InputRow compact label="Prize" value={form.prize} onChange={(v) => setForm({ ...form, prize: v })} />
+              <InputRow compact label="Photo URL" value={form.photoUrl} onChange={(v) => setForm({ ...form, photoUrl: v })} />
+              <PrimaryButton onClick={submit} icon={Plus}>Publish winner</PrimaryButton>
+            </div>
+          )}
+          {mine.length === 0 ? (
+            <div className="glass-subtle rounded-2xl p-5 text-center text-[13px] text-white/45">
+              No winners yet. Add your first winner above.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {mine.map((w) => (
+                <div key={w.id || w._id} className="relative aspect-square rounded-2xl overflow-hidden glass-subtle">
+                  <img src={w.photoUrl} alt="" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink-950/95 via-transparent" />
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <div className="text-[12px] font-semibold truncate">{w.name}</div>
+                    <div className="text-[10px] text-white/65 truncate">{w.prize}</div>
+                  </div>
+                  <button
+                    onClick={() => remove(w.id || w._id)}
+                    className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-ink-950/80 backdrop-blur text-rose-300"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
-      {list.length === 0 ? (
-        <div className="glass-subtle rounded-2xl p-5 text-center text-[13px] text-white/45">
-          No winners yet.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          {list.map((w) => (
-            <div key={w.id} className="relative aspect-square rounded-2xl overflow-hidden glass-subtle">
-              <img src={w.photoUrl} alt="" className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/95 via-transparent" />
-              <div className="absolute bottom-2 left-2 right-2">
-                <div className="text-[12px] font-semibold truncate">{w.name}</div>
-                <div className="text-[10px] text-white/65 truncate">{w.prize}</div>
-              </div>
-              <button
-                onClick={() => remove(w.id)}
-                className="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-full bg-ink-950/80 backdrop-blur text-rose-300"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+      {section === 'global' && (
+        <>
+          {global.length === 0 ? (
+            <div className="glass-subtle rounded-2xl p-5 text-center text-[13px] text-white/45">
+              No global winners declared yet.
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="space-y-2">
+              {global.map((w) => (
+                <div key={w.id || w._id} className="flex items-center gap-3 glass-subtle rounded-2xl p-3">
+                  <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-crimson-500/10 grid place-items-center">
+                    {w.photoUrl
+                      ? <img src={w.photoUrl} alt="" className="h-full w-full object-cover" />
+                      : <Trophy className="h-4 w-4 text-crimson-400" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold truncate">{w.name}</div>
+                    {w.prize && <div className="text-[11px] text-amber-300/80 truncate">{w.prize}</div>}
+                    <div className="text-[10px] text-white/40">
+                      {new Date(w.wonAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </GlassCard>
   )
