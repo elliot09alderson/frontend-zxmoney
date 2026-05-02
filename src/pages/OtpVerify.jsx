@@ -36,7 +36,11 @@ export default function OtpVerify({ phone, go }) {
     if (resendIn > 0) return
     setOtp('')
     setError('')
-    await auth.requestOtp(phone)
+    const res = await auth.requestOtp(phone)
+    if (res && !res.ok && res.error) {
+      setError(res.error)
+      return
+    }
     setResendIn(30)
   }
 

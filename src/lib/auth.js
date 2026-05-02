@@ -12,7 +12,12 @@ export const auth = {
   },
 
   async requestOtp(phone, name = '') {
-    return api.post('/auth/request-otp', { phone, name }, { auth: false })
+    try {
+      const res = await api.post('/auth/request-otp', { phone, name }, { auth: false })
+      return { ok: true, ...res }
+    } catch (e) {
+      return { ok: false, error: e.message }
+    }
   },
 
   async verifyOtp(phone, otp) {
