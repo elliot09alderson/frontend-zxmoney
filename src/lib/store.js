@@ -53,5 +53,8 @@ export const listAdminRedeemReqs    = (status)     => api.get(`/redeem/admin/req
 export const resolveRedeemRequest   = (id, data)   => api.patch(`/redeem/admin/requests/${id}`, data)
 export const sendWalletCredit       = (data)       => api.post('/super/wallet/send', data)
 
+export const listSuperUsers   = (params = '') => api.get(`/super/users${params}`)
+export const deleteSuperUser  = (id)          => api.del(`/super/users/${id}`)
+
 // ----- PARTNER onboarding -----
 export const submitPartnerOnboarding = (payload) => api.post('/partner/onboard', payload)

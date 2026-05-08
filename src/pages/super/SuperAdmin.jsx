@@ -17,6 +17,7 @@ import {
   listSuperContestWinners, declareSuperContestWinners,
   getWalletConfig, setWalletConfig, disburseWalletCredits, listWalletTransactions, sendWalletCredit,
   listAdminRedeemReqs, resolveRedeemRequest,
+  listSuperUsers, deleteSuperUser,
 } from '../../lib/store'
 
 const STATUS = {
@@ -25,7 +26,7 @@ const STATUS = {
   disabled: { label: 'Disabled', icon: Ban,          color: 'rose'    },
 }
 
-const TABS = ['Partners', 'Contests', 'Winners', 'Wallet', 'Redeem']
+const TABS = ['Partners', 'Contests', 'Winners', 'Wallet', 'Redeem', 'Users']
 
 export default function SuperAdmin({ onSignOut }) {
   const [tab, setTab] = useState('Partners')
@@ -79,6 +80,11 @@ export default function SuperAdmin({ onSignOut }) {
         {tab === 'Redeem' && (
           <motion.div key="redeem" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <RedeemTab />
+          </motion.div>
+        )}
+        {tab === 'Users' && (
+          <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <UsersTab />
           </motion.div>
         )}
       </AnimatePresence>
@@ -336,10 +342,17 @@ function WinnerRow({ w, index, onDelete }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-[14px] truncate">{w.name}</div>
+        <div className="font-medium text-[14px] truncate">{w.displayName || w.name || '—'}</div>
         <div className="text-[11px] text-white/50 truncate">
-          {w.restaurantName || '—'}
-          {w.prize && <span className="ml-2 text-amber-300/80">{w.prize}</span>}
+          {(w.displayPhone) && (
+            <span className="mr-2 text-white/60">{w.displayPhone}</span>
+          )}
+          {w.restaurantName && <span className="mr-1">{w.restaurantName} ·</span>}
+          {(w.prize || w.prize_value) && (
+            <span className="text-amber-300/80">
+              {w.prize || `₹${w.prize_value}`}
+            </span>
+          )}
         </div>
       </div>
 
@@ -878,62 +891,85 @@ function WalletTab() {
       </div>
 
       {activeSection === 'send' && (
-        <GlassCard className="!p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <IndianRupee className="h-4 w-4 text-emerald-400" />
-            <span className="text-[13px] font-semibold">Credit Earned Wallet</span>
-          </div>
-          <form onSubmit={handleSend} className="space-y-3">
-            <div>
-              <label className="block text-[11px] uppercase tracking-[0.12em] text-white/50 mb-1.5">Customer Phone</label>
-              <input
-                type="tel"
-                value={sendPhone}
-                onChange={(e) => setSendPhone(e.target.value)}
-                placeholder="10-digit mobile number"
-                className="w-full glass-input rounded-2xl px-4 h-11 text-[14px] bg-transparent outline-none placeholder:text-white/30 tabular-nums"
-                maxLength={10}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] uppercase tracking-[0.12em] text-white/50 mb-1.5">Amount (₹)</label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={sendAmount}
-                onChange={(e) => setSendAmount(e.target.value)}
-                placeholder="e.g. 100"
-                className="w-full glass-input rounded-2xl px-4 h-11 text-[14px] bg-transparent outline-none placeholder:text-white/30 tabular-nums"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] uppercase tracking-[0.12em] text-white/50 mb-1.5">Note (optional)</label>
-              <input
-                type="text"
-                value={sendNote}
-                onChange={(e) => setSendNote(e.target.value)}
-                placeholder="e.g. gift voucher, contest prize…"
-                className="w-full glass-input rounded-2xl px-4 h-10 text-[13px] bg-transparent outline-none placeholder:text-white/30"
-              />
-            </div>
-            {sendResult?.error && (
-              <div className="text-[12px] text-rose-300/90 bg-rose-500/10 border border-rose-400/20 rounded-xl px-3 py-2">
-                {sendResult.error}
+        <div className="max-w-lg mx-auto">
+          <GlassCard className="!p-0 overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/8 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-400/20 grid place-items-center shrink-0">
+                <IndianRupee className="h-4 w-4 text-emerald-400" />
               </div>
-            )}
-            {sendResult?.ok && (
-              <div className="text-[12px] text-emerald-300/90 bg-emerald-500/10 border border-emerald-400/20 rounded-xl px-3 py-2">
-                {sendResult.msg}
+              <div>
+                <div className="text-[14px] font-semibold">Send Wallet Credit</div>
+                <div className="text-[11px] text-white/40">Credit earned balance to any user</div>
               </div>
-            )}
-            <PrimaryButton type="submit" loading={sending} className="w-full !h-11">
-              Credit Earned Balance
-            </PrimaryButton>
-          </form>
-        </GlassCard>
+            </div>
+
+            <form onSubmit={handleSend} className="p-5 space-y-4">
+              {/* Phone + Amount row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] uppercase tracking-[0.1em] text-white/40 mb-1.5">Phone</label>
+                  <div className="glass-input rounded-xl flex items-center h-10 px-3 gap-2">
+                    <span className="text-[12px] text-white/35 shrink-0">+91</span>
+                    <input
+                      type="tel"
+                      value={sendPhone}
+                      onChange={(e) => setSendPhone(e.target.value)}
+                      placeholder="10-digit"
+                      className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/25 tabular-nums min-w-0"
+                      maxLength={10}
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-[0.1em] text-white/40 mb-1.5">Amount (₹)</label>
+                  <div className="glass-input rounded-xl flex items-center h-10 px-3 gap-2">
+                    <IndianRupee className="h-3.5 w-3.5 text-amber-400/70 shrink-0" />
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={sendAmount}
+                      onChange={(e) => setSendAmount(e.target.value)}
+                      placeholder="0"
+                      className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/25 tabular-nums min-w-0"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Note */}
+              <div>
+                <label className="block text-[11px] uppercase tracking-[0.1em] text-white/40 mb-1.5">Note <span className="normal-case text-white/25">(optional)</span></label>
+                <input
+                  type="text"
+                  value={sendNote}
+                  onChange={(e) => setSendNote(e.target.value)}
+                  placeholder="e.g. contest prize, gift voucher…"
+                  className="w-full glass-input rounded-xl px-3 h-10 text-[13px] bg-transparent outline-none placeholder:text-white/25"
+                />
+              </div>
+
+              {/* Feedback */}
+              {sendResult?.error && (
+                <div className="text-[12px] text-rose-300/90 bg-rose-500/10 border border-rose-400/20 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                  <span className="text-rose-400">✕</span> {sendResult.error}
+                </div>
+              )}
+              {sendResult?.ok && (
+                <div className="text-[12px] text-emerald-300/90 bg-emerald-500/10 border border-emerald-400/20 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                  <span className="text-emerald-400">✓</span> {sendResult.msg}
+                </div>
+              )}
+
+              <PrimaryButton type="submit" loading={sending} className="w-full !h-10 !text-[13px]">
+                Send Credit
+              </PrimaryButton>
+            </form>
+          </GlassCard>
+        </div>
       )}
 
       {activeSection === 'config' && (
@@ -1397,5 +1433,294 @@ function StatusBtn({ active, onClick, label, icon: Icon, tone }) {
     >
       <Icon className="h-3.5 w-3.5" /> {label}
     </button>
+  )
+}
+
+/* ─────────── Users tab ─────────── */
+const ROLE_FILTERS = [
+  { key: 'customer', label: 'Customers' },
+  { key: '',         label: 'All' },
+  { key: 'promoter', label: 'Promoters' },
+  { key: 'merchant', label: 'Merchants' },
+  { key: 'admin',    label: 'Admins' },
+]
+
+function UsersTab() {
+  const [users, setUsers]         = useState([])
+  const [total, setTotal]         = useState(0)
+  const [page, setPage]           = useState(1)
+  const [q, setQ]                 = useState('')
+  const [draftQ, setDraftQ]       = useState('')
+  const [roleFilter, setRoleFilter] = useState('customer')
+  const [loading, setLoading]     = useState(false)
+  const [confirmId, setConfirmId] = useState(null)
+  const [exporting, setExporting] = useState(false)
+
+  const LIMIT = 50
+
+  async function load(p = 1, search = q, role = roleFilter) {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ page: p, limit: LIMIT })
+      if (search) params.set('q', search)
+      if (role) params.set('role', role)
+      const data = await listSuperUsers('?' + params.toString())
+      setUsers(data.users || [])
+      setTotal(data.total || 0)
+      setPage(p)
+    } catch {}
+    setLoading(false)
+  }
+
+  useEffect(() => { load(1, '', 'customer') }, [])
+
+  function search(e) {
+    e.preventDefault()
+    setQ(draftQ)
+    load(1, draftQ, roleFilter)
+  }
+
+  function changeRole(role) {
+    setRoleFilter(role)
+    load(1, q, role)
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteSuperUser(id)
+      load(page, q)
+    } catch (e) {
+      alert(e.message || 'Delete failed')
+    } finally {
+      setConfirmId(null)
+    }
+  }
+
+  const pages = Math.ceil(total / LIMIT)
+
+  async function fetchAll() {
+    const params = new URLSearchParams({ limit: 0 })
+    if (q) params.set('q', q)
+    if (roleFilter) params.set('role', roleFilter)
+    const data = await listSuperUsers('?' + params.toString())
+    return data.users || []
+  }
+
+  async function exportCSV() {
+    setExporting(true)
+    try {
+      const all = await fetchAll()
+      const rows = [
+        ['Name', 'Phone', 'Role', 'Wallet Balance', 'Earned Balance', 'Joined'],
+        ...all.map((u) => [
+          u.name || '',
+          u.phone,
+          u.role,
+          u.walletBalance ?? 0,
+          u.earnedBalance ?? 0,
+          u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN') : '',
+        ]),
+      ]
+      const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `zxmoney-users-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+    } catch {}
+    setExporting(false)
+  }
+
+  async function exportPDF() {
+    setExporting(true)
+    try {
+      const all = await fetchAll()
+      const rows = all.map((u) => [
+        u.name || '—',
+        u.phone,
+        u.role,
+        `₹${(u.walletBalance ?? 0).toLocaleString('en-IN')}`,
+        `₹${(u.earnedBalance ?? 0).toLocaleString('en-IN')}`,
+        u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN') : '—',
+      ])
+      const html = `<html><head><title>ZX Money Users</title>
+        <style>body{font-family:sans-serif;font-size:11px}table{width:100%;border-collapse:collapse}
+        th{background:#111;color:#fff;padding:6px 8px;text-align:left}
+        td{padding:5px 8px;border-bottom:1px solid #eee}tr:nth-child(even){background:#f9f9f9}
+        h2{margin-bottom:8px}</style></head>
+        <body><h2>ZX Money Users (${all.length} total)</h2>
+        <table><thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Wallet</th><th>Earned</th><th>Joined</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table></body></html>`
+      const w = window.open('', '_blank')
+      w.document.write(html)
+      w.document.close()
+      w.print()
+    } catch {}
+    setExporting(false)
+  }
+
+  const roleStyle = (role) => {
+    if (role === 'super')    return 'bg-amber-500/15 text-amber-300 border-amber-400/20'
+    if (role === 'admin')    return 'bg-blue-500/15 text-blue-300 border-blue-400/20'
+    if (role === 'promoter') return 'bg-violet-500/15 text-violet-300 border-violet-400/20'
+    if (role === 'merchant') return 'bg-emerald-500/15 text-emerald-300 border-emerald-400/20'
+    return 'bg-white/8 text-white/45 border-white/10'
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Top bar: search + export */}
+      <div className="flex gap-2 items-center">
+        <form onSubmit={search} className="flex-1 flex gap-2">
+          <label className="glass-input flex-1 flex items-center gap-2 rounded-2xl px-3 h-10">
+            <Search className="h-[15px] w-[15px] text-white/40 shrink-0" />
+            <input
+              value={draftQ}
+              onChange={(e) => setDraftQ(e.target.value)}
+              placeholder="Search by name or phone…"
+              className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/25"
+            />
+          </label>
+          <button type="submit" className="h-10 px-4 rounded-2xl bg-crimson-500/20 border border-crimson-400/40 text-crimson-200 text-[12px] font-medium hover:bg-crimson-500/30 transition-colors shrink-0">
+            Search
+          </button>
+        </form>
+        <button onClick={exportCSV} disabled={exporting} className="h-10 px-3 rounded-2xl glass-subtle text-[12px] text-white/55 hover:text-white disabled:opacity-40 transition-colors flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px]">↓</span> CSV
+        </button>
+        <button onClick={exportPDF} disabled={exporting} className="h-10 px-3 rounded-2xl glass-subtle text-[12px] text-white/55 hover:text-white disabled:opacity-40 transition-colors flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px]">↓</span> PDF
+        </button>
+      </div>
+
+      {/* Role filter pills */}
+      <div className="flex gap-1.5 flex-wrap">
+        {ROLE_FILTERS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => changeRole(key)}
+            className={`h-7 px-3 rounded-full text-[11px] font-medium transition-colors border ${
+              roleFilter === key
+                ? 'bg-crimson-500/20 border-crimson-400/50 text-crimson-200'
+                : 'glass-subtle border-transparent text-white/45 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="text-[11px] text-white/30 px-1">{total.toLocaleString()} {roleFilter || 'total'} users</div>
+
+      {/* User rows */}
+      {loading ? (
+        <div className="glass rounded-3xl p-10 text-center text-white/30 text-[13px]">Loading…</div>
+      ) : users.length === 0 ? (
+        <div className="glass rounded-3xl p-10 text-center text-white/30 text-[13px]">No users found.</div>
+      ) : (
+        <div className="space-y-1.5">
+          {users.map((u) => (
+            <motion.div
+              key={u._id}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass rounded-2xl px-4 py-3 flex items-center gap-3 group hover:bg-white/[0.03] transition-colors"
+            >
+              {/* Avatar */}
+              <div className="h-9 w-9 rounded-xl bg-white/6 border border-white/8 grid place-items-center shrink-0 text-[13px] font-semibold text-white/50">
+                {u.name ? u.name[0].toUpperCase() : '?'}
+              </div>
+
+              {/* Name + phone */}
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-medium truncate">{u.name || <span className="text-white/30 italic">No name</span>}</div>
+                <div className="text-[11px] text-white/40 tabular-nums">{u.phone}</div>
+              </div>
+
+              {/* Role badge */}
+              <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border shrink-0 ${roleStyle(u.role)}`}>
+                {u.role}
+              </span>
+
+              {/* Balances */}
+              <div className="hidden md:flex flex-col items-end shrink-0 gap-0.5">
+                <div className="text-[11px] text-white/50 tabular-nums">₹{(u.walletBalance ?? 0).toLocaleString('en-IN')} <span className="text-white/25">wallet</span></div>
+                <div className="text-[11px] text-crimson-300/80 tabular-nums">₹{(u.earnedBalance ?? 0).toLocaleString('en-IN')} <span className="text-white/25">earned</span></div>
+              </div>
+
+              {/* Date */}
+              <div className="hidden lg:block text-[11px] text-white/25 tabular-nums shrink-0 w-16 text-right">
+                {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short' }) : '—'}
+              </div>
+
+              {/* Delete */}
+              <button
+                onClick={() => setConfirmId(u._id)}
+                className="h-8 w-8 rounded-xl border border-transparent text-white/20 hover:text-rose-300 hover:border-rose-400/30 hover:bg-rose-500/10 transition-all grid place-items-center shrink-0 opacity-0 group-hover:opacity-100"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-1">
+          <button
+            disabled={page <= 1}
+            onClick={() => load(page - 1, q)}
+            className="h-8 px-4 rounded-xl glass-subtle text-[12px] disabled:opacity-30 hover:bg-white/5 transition-colors"
+          >
+            ← Prev
+          </button>
+          <span className="text-[12px] text-white/40">{page} / {pages}</span>
+          <button
+            disabled={page >= pages}
+            onClick={() => load(page + 1, q)}
+            className="h-8 px-4 rounded-xl glass-subtle text-[12px] disabled:opacity-30 hover:bg-white/5 transition-colors"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+
+      {/* Delete confirm modal */}
+      <AnimatePresence>
+        {confirmId && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="glass rounded-3xl p-6 w-full max-w-sm"
+            >
+              <div className="h-12 w-12 rounded-2xl bg-rose-500/15 border border-rose-400/20 grid place-items-center mb-4">
+                <Trash2 className="h-5 w-5 text-rose-400" />
+              </div>
+              <div className="font-display text-[17px] font-semibold mb-1.5">Delete user?</div>
+              <div className="text-[13px] text-white/45 mb-6 leading-relaxed">This will permanently remove the user. This cannot be undone.</div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmId(null)}
+                  className="flex-1 h-10 rounded-2xl glass-subtle text-[13px] hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(confirmId)}
+                  className="flex-1 h-10 rounded-2xl bg-rose-500/20 border border-rose-400/40 text-rose-200 text-[13px] font-medium hover:bg-rose-500/30 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
