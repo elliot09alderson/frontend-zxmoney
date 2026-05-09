@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Trophy, Gift, ChevronRight, Wifi, X, ShieldCheck, History, ArrowDownLeft, Clock, CheckCircle2, XCircle, ShoppingBag } from 'lucide-react'
+import { Search, Trophy, Gift, ChevronRight, Wifi, X, ShieldCheck, History, ArrowDownLeft, Clock, CheckCircle2, XCircle, ShoppingBag, Store } from 'lucide-react'
 import TopBar from '../../components/TopBar'
 import RestaurantCard from '../../components/RestaurantCard'
 import ContestCard from '../../components/ContestCard'
@@ -218,6 +218,26 @@ export default function CustomerHome({ phone, walletBalance = 0, earnedBalance =
         {ssoLoading
           ? <div className="h-4 w-4 border-2 border-crimson-400 border-t-transparent rounded-full animate-spin" />
           : <ChevronRight className="h-4 w-4 text-white/30" />}
+      </motion.button>
+
+      {/* Join as Promoter / Merchant on ZXCOM */}
+      <motion.button
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.12 }}
+        onClick={() => window.open('https://zxcom.in/member/register', '_blank')}
+        className="w-full flex items-center justify-between glass rounded-2xl px-5 py-4 hover:bg-white/8 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-400/30 grid place-items-center">
+            <Store className="h-4 w-4 text-emerald-400" />
+          </div>
+          <div className="text-left">
+            <div className="text-[14px] font-semibold text-white">Join as Promoter / Merchant</div>
+            <div className="text-[11px] text-white/40">Use your ZXMoney phone &amp; password — no new signup</div>
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 text-white/30" />
       </motion.button>
 
       {/* Credit Earned — summary panel */}
